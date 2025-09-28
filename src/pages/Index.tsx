@@ -1,187 +1,351 @@
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { ArrowRight, Zap, Shield, BarChart3, Users, Users2Icon, Settings } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
-import heroBackground from "@/assets/hero-bg.jpg";
-import forkLogo from "@/assets/fork.png"; // <-- Fork logo import
-import { useAuthState } from "react-firebase-hooks/auth";
-import { auth } from "@/firebase";
-import { signOut } from "firebase/auth";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Link } from "react-router-dom";
+import { 
+  Bot, 
+  Plus, 
+  Search,
+  Settings,
+  Play,
+  Pause,
+  TrendingUp,
+  Phone,
+  Clock,
+  CheckCircle,
+  XCircle,
+  MonitorIcon
+} from "lucide-react";
+import Vapi from "@vapi-ai/web";
 
-const Index = () => {
-  const navigate = useNavigate();
-  const [user] = useAuthState(auth);
+const vapi = new Vapi("5483b67b-6cd6-4ae8-8dd6-bbda35e4e7eb"); // your public key
 
-  const features = [
-    { icon: Zap, title: "Lightning Fast", description: "Process 10+ number of calls with ultra-low latency AI agents" },
-   { icon: Settings, title: "Seamless Integration", description: "Connect effortlessly with your existing tools and systems" },
-    { icon: BarChart3, title: "Advanced Analytics", description: "Real-time insights and performance metrics" },
-    { icon: Users, title: "Multi-Agent Support", description: "Deploy and manage multiple AI agents seamlessly" }
+const Agents = () => {
+  const [inCall, setInCall] = useState<Record<string, boolean>>({});
+  const [activeAssistant, setActiveAssistant] = useState<string | null>(null);
+
+  const agents = [
+    {
+      id: "sales-pro",
+      assistantId: "7224bb63-b279-4386-9620-80ddc36724e9",
+      name: "Movie Ticket Booking",
+      description: "High-converting sales calls with natural conversation flow",
+      status: "active",
+      callsToday: 47,
+      successRate: 89,
+      avgDuration: "4m 12s",
+      category: "Sales",
+      phone: "+13203727212"
+    },
+    {
+      id: "support-helper",
+      assistantId: "57ff077d-10f8-4b52-942c-19b105bf74dd",
+      name: "Support Helper",
+      description: "24/7 customer support with issue resolution capabilities",  
+      status: "active",
+      callsToday: 23,
+      successRate: 96,
+      avgDuration: "2m 45s",
+      category: "Support",
+      phone: "+13194088330"
+    },
+    {
+      id: "booking-assistant",
+      name: "Booking Assistant",
+      description: "Automated appointment scheduling and calendar management",
+      status: "paused", 
+      callsToday: 0,
+      successRate: 92,
+      avgDuration: "3m 18s",
+      category: "Scheduling"
+    },
+    {
+      id: "lead-qualifier", 
+      name: "Lead Qualifier",
+      description: "Intelligent lead scoring and qualification system",
+      status: "active",
+      callsToday: 31,
+      successRate: 78, 
+      avgDuration: "5m 33s",
+      category: "Sales"
+    },
+    {
+      id: "survey-collector",
+      name: "Survey Collector", 
+      description: "Automated survey and feedback collection agent",
+      status: "active",
+      callsToday: 15,
+      successRate: 85,
+      avgDuration: "3m 42s", 
+      category: "Research"
+    },
+    {
+      id: "appointment-reminder",
+      name: "Appointment Reminder",
+      description: "Proactive appointment confirmations and reminders",
+      status: "active", 
+      callsToday: 12,
+      successRate: 94,
+      avgDuration: "1m 28s",
+      category: "Scheduling"
+    }
   ];
 
-  const handleLogout = async () => {
-    await signOut(auth);
+  const categories = ["All", "Sales", "Support", "Scheduling", "Research"];
+
+  useEffect(() => {
+    vapi.on("call-start", () => {
+      console.log("Call started 🎤");
+    });
+    vapi.on("call-end", () => {
+      console.log("Call ended 📴");
+      if (activeAssistant) {
+        setInCall((prev) => ({ ...prev, [activeAssistant]: false }));
+        setActiveAssistant(null);
+      }
+    });
+    vapi.on("message", (message) => {
+      if (message.type === "transcript") {
+        console.log(${message.role}: ${message.transcript});
+      }
+    });
+  }, [activeAssistant]);
+
+  const startCall = (assistantId: string) => {
+    vapi.start(assistantId);
+    setActiveAssistant(assistantId);
+    setInCall((prev) => ({ ...prev, [assistantId]: true }));
+  };
+
+  const endCall = () => {
+    if (activeAssistant) {
+      vapi.stop();
+      setInCall((prev) => ({ ...prev, [activeAssistant]: false }));
+      setActiveAssistant(null);
+    }
   };
 
   return (
-    <div className="min-h-screen relative overflow-hidden">
-      {/* Hero Background */}
-      <div 
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-20"
-        style={{ backgroundImage: url(${heroBackground}) }}
-      />
+    <div className="min-h-screen relative">
+      {/* Background */}
       <div className="absolute inset-0 bg-gradient-hero" />
       
-      {/* Header */}
-      <motion.header 
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="relative z-10 p-6"
-      >
-        <nav className="max-w-7xl mx-auto flex justify-between items-center">
-          {/* Dynamic Logo */}
-          {/* Dynamic Logo */}
-          {/* Dynamic Logo */}
-          <motion.div 
-          className="flex items-start gap-2 cursor-pointer"
-          animate={{ scale: [1, 1.05, 1] }}
-          transition={{ duration: 2, repeat: Infinity }}
-          onClick={() => navigate("/")}
->
-  <div className="flex flex-col leading-tight">
-    <div className="flex items-center gap-2">
-      <span className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-        Fork It
-      </span>
-      {/* Fork Logo with white bg */}
-      <motion.div 
-        whileHover={{ rotate: 360 }}
-        transition={{ duration: 0.6 }}
-        className="p-1 bg-white rounded-full shadow-md"
-      >
-        <img src={forkLogo} alt="Fork Logo" className="h-5 w-5" />
-      </motion.div>
-    </div>
-    <span className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-      An AI Agent Hub
-    </span>
-  </div>
-</motion.div>
-
-
-
-          {/* Greeting + Auth Buttons */}
-          <div className="flex gap-4 items-center">
-            {user ? (
-              <>
-                {/* Greeting with motion */}
-                <motion.span
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.5 }}
-                  className="text-lg font-medium text-primary"
-                >
-                  Hi, {user.displayName || user.email} 👋
-                </motion.span>
-                <Button variant="ghost" onClick={handleLogout}>
-                  Logout
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button variant="ghost" asChild>
-                  <Link to="/login">Login</Link>
-                </Button>
-                <Button className="btn-hero" asChild>
-                  <Link to="/signup">Sign Up</Link>
-                </Button>
-              </>
-            )}
-          </div>
-        </nav>
-      </motion.header>
-
-      {/* Hero Section */}
-      <main className="relative z-10 max-w-7xl mx-auto px-6 pt-20 pb-32">
-        <div className="text-center">
-          <motion.h1 
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="text-6xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent"
-          >
-            The Future of
-            <br />
-            <span className="bg-gradient-primary bg-clip-text text-transparent animate-glow-pulse">
-              AI Agents
-            </span>
-          </motion.h1>
-          
-          <motion.p 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.4 }}
-            className="text-xl md:text-2xl text-muted-foreground mb-12 max-w-3xl mx-auto leading-relaxed"
-          >
-            Deploy, use, and scale intelligent AI agents that handle calls, 
-            analyze conversations, and deliver insights in real-time.
-          </motion.p>
-
-          {/* Call-to-action buttons */}
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.6 }}
-            className="flex flex-col sm:flex-row gap-4 justify-center"
-          >
-            <Button 
-              size="lg" 
-              className="btn-hero group" 
-              asChild
-              onClick={() => {
-                if (user) navigate("/dashboard");
-                else navigate("/login");
-              }}
-            >
-              <span>
-                Admin Dashboard
-                <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-              </span>
-            </Button>
-            <Button size="lg" variant="outline" className="glass-card" asChild>
-              <Link to="/agents">Use Agents</Link>
-            </Button>
-          </motion.div>
-        </div>
-
-        {/* Features Grid */}
+      <div className="relative z-10 p-6">
+        {/* Header */}
         <motion.div 
-          initial={{ opacity: 0, y: 40 }}
+          initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.8 }}
-          className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mt-32"
+          transition={{ duration: 0.6 }}
+          className="flex justify-between items-center mb-8"
         >
-          {features.map((feature, index) => (
+          <div>
+            <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+              AI Agents
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              Manage and deploy your intelligent agents
+            </p>
+          </div>
+          <div className="flex gap-3">
+            <Button variant="outline" className="glass-card">
+              <Settings className="h-4 w-4 mr-2" />
+              Settings
+            </Button>
+            <Button className="btn-hero">
+              <Plus className="h-4 w-4 mr-2" />
+              Create Agent
+            </Button>
+          </div>
+        </motion.div>
+
+        {/* Search and Filters */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="flex flex-col sm:flex-row gap-4 mb-8"
+        >
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input 
+              placeholder="Search agents..." 
+              className="pl-10 glass-card"
+            />
+          </div>
+          <div className="flex gap-2">
+            {categories.map((category) => (
+              <Button 
+                key={category}
+                variant={category === "All" ? "default" : "outline"}
+                size="sm"
+                className={category === "All" ? "btn-hero" : "glass-card"}
+              >
+                {category}
+              </Button>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* Agents Grid */}
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.4 }}
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+        >
+          {agents.map((agent, index) => (
             <motion.div
-              key={feature.title}
+              key={agent.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.8 + index * 0.1 }}
+              transition={{ duration: 0.6, delay: 0.4 + index * 0.1 }}
               whileHover={{ y: -5, transition: { duration: 0.2 } }}
             >
-              <Card className="glass-card p-6 h-full hover:shadow-glow-primary transition-all duration-300">
-                <feature.icon className="h-12 w-12 text-primary mb-4 animate-float" />
-                <h3 className="text-lg font-semibold mb-2">{feature.title}</h3>
-                <p className="text-muted-foreground">{feature.description}</p>
+              <Card className="glass-card hover:shadow-glow-primary transition-all duration-300 h-full">
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-gradient-primary rounded-lg">
+                        <Bot className="h-6 w-6 text-white" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-lg">{agent.name}</CardTitle>
+                        <Badge 
+                          variant={agent.status === "active" ? "default" : "secondary"}
+                          className="mt-1"
+                        >
+                          {agent.status === "active" ? (
+                            <Play className="h-3 w-3 mr-1" />
+                          ) : (
+                            <Pause className="h-3 w-3 mr-1" />
+                          )}
+                          {agent.status}
+                        </Badge>
+                      </div>
+                    </div>
+                    <Badge variant="outline" className="text-xs">
+                      {agent.category}
+                    </Badge>
+                  </div>
+                  <CardDescription className="mt-2">
+                    {agent.description}
+                    {agent.phone && (
+                      <span className="block mt-1 text-sm text-muted-foreground">
+                        (Mobile: {agent.phone})
+                      </span>
+                    )}
+                  </CardDescription>
+                </CardHeader>
+                
+                <CardContent className="space-y-4">
+                  {/* Stats */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="text-center p-3 bg-muted/5 rounded-lg">
+                      <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground mb-1">
+                        <Phone className="h-3 w-3" />
+                        Today
+                      </div>
+                      <div className="text-lg font-semibold text-primary">
+                        {agent.callsToday}
+                      </div>
+                    </div>
+                    <div className="text-center p-3 bg-muted/5 rounded-lg">
+                      <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground mb-1">
+                        <CheckCircle className="h-3 w-3" />
+                        Success
+                      </div>
+                      <div className="text-lg font-semibold text-green-500">
+                        {agent.successRate}%
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Average Duration */}
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Clock className="h-4 w-4" />
+                      Avg Duration
+                    </div>
+                    <span className="font-medium">{agent.avgDuration}</span>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex gap-2 pt-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex-1 glass-card"
+                      asChild
+                    >
+                      <Link to={/agents/${agent.id}}>
+                        <TrendingUp className="h-4 w-4 mr-2" />
+                        View Stats
+                      </Link>
+                    </Button>
+
+                    {/* Phone Button for mobile */}
+                    {agent.phone && (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        className="flex-1"
+                        asChild
+                      >
+                        <a href={tel:${agent.phone}}>
+                          <Phone className="h-4 w-4 mr-2" />
+                          Call Now
+                        </a>
+                      </Button>
+                    )}
+
+                    {/* Call Controls (Vapi) */}
+                    {agent.assistantId ? (
+                      inCall[agent.assistantId] ? (
+                        <Button 
+                          variant="destructive"
+                          size="sm"
+                          className="flex-1"
+                          onClick={endCall}
+                        >
+                          <XCircle className="h-4 w-4 mr-2" />
+                          End Call
+                        </Button>
+                      ) : (
+                        <Button 
+                          variant="default"
+                          size="sm"
+                          className="btn-hero flex-1"
+                          onClick={() => startCall(agent.assistantId!)}
+                        >
+                          <MonitorIcon className="h-4 w-4 mr-2" />
+                          Start Call
+                        </Button>
+                      )
+                    ) : (
+                      <Button 
+                        variant={agent.status === "active" ? "outline" : "default"}
+                        size="sm"
+                        className={agent.status === "active" ? "glass-card" : "btn-hero"}
+                      >
+                        {agent.status === "active" ? (
+                          <Pause className="h-4 w-4" />
+                        ) : (
+                          <Play className="h-4 w-4" />
+                        )}
+                      </Button>
+                    )}
+                  </div>
+                </CardContent>
               </Card>
             </motion.div>
           ))}
         </motion.div>
-      </main>
+      </div>
     </div>
   );
 };
 
-export default Index;
+export default Agents;
