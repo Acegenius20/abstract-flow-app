@@ -8,15 +8,33 @@ import { ArrowLeft, Mail, Lock } from "lucide-react";
 import { useState } from "react";
 import authBackground from "@/assets/auth-bg.jpg";
 
+import { auth } from "@/firebase";
+import { GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword } from "firebase/auth";
+
 const Login = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement authentication logic
-    navigate("/dashboard");
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      navigate("/"); // go back to homepage
+    } catch (err: any) {
+      setError(err.message);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    try {
+      const provider = new GoogleAuthProvider();
+      await signInWithPopup(auth, provider);
+      navigate("/"); // go back to homepage
+    } catch (err: any) {
+      setError(err.message);
+    }
   };
 
   return (
@@ -24,7 +42,7 @@ const Login = () => {
       {/* Background */}
       <div 
         className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-10"
-        style={{ backgroundImage: `url(${authBackground})` }}
+        style={{ backgroundImage: url(${authBackground}) }}
       />
       <div className="absolute inset-0 bg-gradient-hero" />
       
@@ -67,7 +85,11 @@ const Login = () => {
           </CardHeader>
           
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleEmailLogin} className="space-y-6">
+              {error && (
+                <p className="text-red-500 text-sm text-center">{error}</p>
+              )}
+
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -125,6 +147,20 @@ const Login = () => {
                     className="btn-hero w-full"
                   >
                     Sign In
+                  </Button>
+                </motion.div>
+
+                <motion.div
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <Button 
+                    type="button"
+                    variant="outline"
+                    className="w-full glass-card"
+                    onClick={handleGoogleLogin}
+                  >
+                    Sign in with Google
                   </Button>
                 </motion.div>
                 
