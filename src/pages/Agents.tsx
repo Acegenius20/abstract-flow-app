@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,30 +15,42 @@ import {
   TrendingUp,
   Phone,
   Clock,
-  CheckCircle
+  CheckCircle,
+  XCircle,
+  MonitorIcon
 } from "lucide-react";
+import Vapi from "@vapi-ai/web";
+
+const vapi = new Vapi("5483b67b-6cd6-4ae8-8dd6-bbda35e4e7eb"); // your public key
 
 const Agents = () => {
+  const [inCall, setInCall] = useState<Record<string, boolean>>({});
+  const [activeAssistant, setActiveAssistant] = useState<string | null>(null);
+
   const agents = [
     {
       id: "sales-pro",
-      name: "Sales Agent Pro",
+      assistantId: "7224bb63-b279-4386-9620-80ddc36724e9",
+      name: "Movie Ticket Booking",
       description: "High-converting sales calls with natural conversation flow",
       status: "active",
       callsToday: 47,
       successRate: 89,
       avgDuration: "4m 12s",
-      category: "Sales"
+      category: "Sales",
+      phone: "+13203727212"
     },
     {
       id: "support-helper",
+      assistantId: "57ff077d-10f8-4b52-942c-19b105bf74dd",
       name: "Support Helper",
       description: "24/7 customer support with issue resolution capabilities",  
       status: "active",
       callsToday: 23,
       successRate: 96,
       avgDuration: "2m 45s",
-      category: "Support"
+      category: "Support",
+      phone: "+13194088330"
     },
     {
       id: "booking-assistant",
@@ -82,6 +95,38 @@ const Agents = () => {
   ];
 
   const categories = ["All", "Sales", "Support", "Scheduling", "Research"];
+
+  useEffect(() => {
+    vapi.on("call-start", () => {
+      console.log("Call started 🎤");
+    });
+    vapi.on("call-end", () => {
+      console.log("Call ended 📴");
+      if (activeAssistant) {
+        setInCall((prev) => ({ ...prev, [activeAssistant]: false }));
+        setActiveAssistant(null);
+      }
+    });
+    vapi.on("message", (message) => {
+      if (message.type === "transcript") {
+        console.log(${message.role}: ${message.transcript});
+      }
+    });
+  }, [activeAssistant]);
+
+  const startCall = (assistantId: string) => {
+    vapi.start(assistantId);
+    setActiveAssistant(assistantId);
+    setInCall((prev) => ({ ...prev, [assistantId]: true }));
+  };
+
+  const endCall = () => {
+    if (activeAssistant) {
+      vapi.stop();
+      setInCall((prev) => ({ ...prev, [activeAssistant]: false }));
+      setActiveAssistant(null);
+    }
+  };
 
   return (
     <div className="min-h-screen relative">
@@ -187,6 +232,11 @@ const Agents = () => {
                   </div>
                   <CardDescription className="mt-2">
                     {agent.description}
+                    {agent.phone && (
+                      <span className="block mt-1 text-sm text-muted-foreground">
+                        (Mobile: {agent.phone})
+                      </span>
+                    )}
                   </CardDescription>
                 </CardHeader>
                 
@@ -230,22 +280,63 @@ const Agents = () => {
                       className="flex-1 glass-card"
                       asChild
                     >
-                      <Link to={`/agents/${agent.id}`}>
+                      <Link to={/agents/${agent.id}}>
                         <TrendingUp className="h-4 w-4 mr-2" />
                         View Stats
                       </Link>
                     </Button>
-                    <Button 
-                      variant={agent.status === "active" ? "outline" : "default"}
-                      size="sm"
-                      className={agent.status === "active" ? "glass-card" : "btn-hero"}
-                    >
-                      {agent.status === "active" ? (
-                        <Pause className="h-4 w-4" />
+
+                    {/* Phone Button for mobile */}
+                    {agent.phone && (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        className="flex-1"
+                        asChild
+                      >
+                        <a href={tel:${agent.phone}}>
+                          <Phone className="h-4 w-4 mr-2" />
+                          Call Now
+                        </a>
+                      </Button>
+                    )}
+
+                    {/* Call Controls (Vapi) */}
+                    {agent.assistantId ? (
+                      inCall[agent.assistantId] ? (
+                        <Button 
+                          variant="destructive"
+                          size="sm"
+                          className="flex-1"
+                          onClick={endCall}
+                        >
+                          <XCircle className="h-4 w-4 mr-2" />
+                          End Call
+                        </Button>
                       ) : (
-                        <Play className="h-4 w-4" />
-                      )}
-                    </Button>
+                        <Button 
+                          variant="default"
+                          size="sm"
+                          className="btn-hero flex-1"
+                          onClick={() => startCall(agent.assistantId!)}
+                        >
+                          <MonitorIcon className="h-4 w-4 mr-2" />
+                          Start Call
+                        </Button>
+                      )
+                    ) : (
+                      <Button 
+                        variant={agent.status === "active" ? "outline" : "default"}
+                        size="sm"
+                        className={agent.status === "active" ? "glass-card" : "btn-hero"}
+                      >
+                        {agent.status === "active" ? (
+                          <Pause className="h-4 w-4" />
+                        ) : (
+                          <Play className="h-4 w-4" />
+                        )}
+                      </Button>
+                    )}
                   </div>
                 </CardContent>
               </Card>
